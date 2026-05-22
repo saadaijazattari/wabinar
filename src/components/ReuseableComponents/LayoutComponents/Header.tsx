@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation'
 import React from 'react'
 import PurpleIcon from './PurpleIcon'
 import { LightningIcon } from '@/icons/Lightningicon'
+import CreateWebinarButton from './CreateWebinarButton'
 
 type Props = { user: User }
 
@@ -33,10 +34,11 @@ const Header = ({ user }: Props) => {
 
             )}
 
-            <div>
+            <div className="flex gap-6 items-center flex-wrap">
                 <PurpleIcon>
                     <LightningIcon/>
                 </PurpleIcon>
+                <CreateWebinarButton/>
             </div>
         </div>
     )
