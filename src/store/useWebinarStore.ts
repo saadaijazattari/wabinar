@@ -6,7 +6,7 @@ export type WebinarFormState = {
   basicInfo: {
     webinarName?: string
     description?: string
-    date?: string
+    date?: Date
     time?: string
     timeFormat?: 'AM' | 'PM'
   }
@@ -65,6 +65,8 @@ type WebinarStore = {
     value: WebinarFormState['additionalInfo'][K]
   ) => void
 
+  addTag: (tag: string) => void
+  removeTag: (tag: string) => void
   validateStep: (stepId: keyof WebinarFormState) => boolean
   getStepValidationErrors: (stepId: keyof WebinarFormState) => ValidationErrors
   resetForm: () => void
@@ -186,5 +188,41 @@ export const useWebinarStore = create<WebinarStore>((set, get) => ({
       formData: initialState,
       validation: initialValidation,
     })
-  }
+  },
+  addTag: (tag: string) =>
+  set((state) => {
+    const newTags = [...(state.formData.cta.tags || []), tag]
+    const newCTA = {
+      ...state.formData.cta,
+      tags: newTags,
+    }
+
+    return {
+      formData: {
+        ...state.formData,
+        cta: newCTA,
+      },
+    }
+  }),
+  
+removeTag: (tagToRemove) => {
+  set((state) => {
+    const newTags = (state.formData.cta.tags || []).filter(
+      (tag) => tag !== tagToRemove
+    )
+    const newCTA = {
+      ...state.formData.cta,
+      tags: newTags,
+    }
+
+    return {
+      formData: {
+        ...state.formData,
+        cta: newCTA,
+      },
+    }
+  })
+},
+
+
 }))

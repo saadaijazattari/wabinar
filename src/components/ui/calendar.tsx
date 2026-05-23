@@ -24,6 +24,7 @@ function Calendar({
   ...props
 }: React.ComponentProps<typeof DayPicker> & {
   buttonVariant?: React.ComponentProps<typeof Button>["variant"]
+  initialFocus?: boolean
 }) {
   const defaultClassNames = getDefaultClassNames()
 

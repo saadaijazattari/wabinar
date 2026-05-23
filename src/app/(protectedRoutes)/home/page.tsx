@@ -52,8 +52,8 @@ const Pages = (props: Props) => {
   <Image
     src="/featurecard.png"
     alt="Info-card"
-    width={250}
-    height={250}
+    width={150}
+    height={150}
     className="w-full h-full object-cover rounded-xl"
     key={index}
   />

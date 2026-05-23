@@ -7,6 +7,8 @@ import { useWebinarStore } from '@/store/useWebinarStore'
 import React, { useState } from 'react'
 import MultiStepForm from './MultiStepForm/MultiStepForm'
 import BasicInfoStep from './BasicInfoStep'
+import CTAStep from './CTAStep'
+import AdditionalInfoStep from './AdditionalInfoStep'
 
 type Props = {}
 
@@ -21,6 +23,27 @@ const CreateWebinarButton = (props: Props) => {
     description: 'Please fill out the standard info needed for your webinar',
     component: <BasicInfoStep />,
   },
+  {
+  id: 'cta',
+  title: 'CTA',
+  description:
+    'Please provide the end-point for your customers through your webinar',
+  component: (
+    <CTAStep
+      assistants={[]}
+      stripeProducts={[]}
+    />
+  ),
+},
+{
+  id: 'additionalInfo',
+  title: 'Additional information',
+  description:
+    'Please fill out information about additional options if necessary',
+  component: <AdditionalInfoStep />,
+},
+
+
 ]
 
 const handleComplete= (webinarId: string)=>{

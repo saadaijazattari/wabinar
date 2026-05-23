@@ -18,13 +18,17 @@ const Layout = async ({children} : Props) => {
 
 
   return (
-    <div className='w-full min-h-screen flex'>
-        <Sidebar/>
-        <div className='flex flex-col w-full h-screen overflow-auto px-4 scrollbar-hide container mx-auto'>
-        <Header user={userExists.user}/>
-        {children}
-        </div>
-    </div>
+    <div className="flex w-full min-h-screen">
+  {/* SIDEBAR */}
+  <Sidebar />
+  <div className="flex flex-col w-full h-screen overflow-auto px-4 scrollbar-hide container mx-auto">
+    {/* HEADER */}
+    <Header user={userExists.user} />
+
+    <div className="flex-1 py-10 px-4">{children}</div>
+  </div>
+</div>
+
   )
 }
 
