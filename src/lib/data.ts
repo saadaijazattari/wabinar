@@ -34,7 +34,7 @@ export const sidebarData = [
     id: 5,
     title: 'settings',
     icon: SettingsIcon,
-    link: '/ai-agents',
+    link: '/settings',
   },
 ]
 

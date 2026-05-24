@@ -25,9 +25,10 @@ const Layout = async ({children} : Props) => {
     {/* HEADER */}
     <Header user={userExists.user} />
 
-    <div className="flex-1 py-10 px-4">{children}</div>
+    <div className="flex-1 py-10 ">{children}</div>
   </div>
 </div>
+
 
   )
 }

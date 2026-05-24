@@ -1,3 +1,4 @@
+import { prismaClient } from '@/lib/prismaClient'
 import { validateAdditionalInfo, validateBasicInfo, validateCTA, ValidationErrors } from '@/lib/type'
 import { CtaTypeEnum } from '@prisma/client'
 import { create } from 'zustand'
@@ -226,3 +227,25 @@ removeTag: (tagToRemove) => {
 
 
 }))
+
+export const getWebinarByPresenterId = async (presenterId: string) => {
+  try {
+    const webinars = await prismaClient.webinar.findMany({
+      where: { presenterId },
+      include: {
+        presenter: {
+          select: {
+            name: true,
+            stripeConnectId: true,
+            id: true,
+          },
+        },
+      },
+    })
+    return webinars
+  } catch (error) {
+    console.error('Error getting webinars:', error)
+    return []
+  }
+}
+
