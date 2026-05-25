@@ -1,5 +1,5 @@
 import React from 'react'
-import PurpleIcon from '../LayoutComponents/PurpleIcon'
+import PurpleIcon from '../PurpleIcon'
 import { Input } from '@/components/ui/input'
 import { Search } from 'lucide-react'
 

@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/providers/theme-provider"
 import { Manrope } from "next/font/google"; 
 import { ClerkProvider } from "@clerk/nextjs"; 
+import { Toaster } from "sonner";
 
 
 
@@ -35,6 +36,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           {children}
+          <Toaster/>
         </ThemeProvider>
       </body>
     </html>
