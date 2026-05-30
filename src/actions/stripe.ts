@@ -121,3 +121,40 @@ export const updateSubscription = async (subscription: Stripe.Subscription) => {
     console.error('Error updating subscription:', error)
   }
 }
+
+
+export const createCheckoutLink = async (
+  priceId: string,
+  stripeId: string,
+  attendeeId: string,
+  webinarId: string,
+  bookCall: boolean = false
+) => {
+  try {
+    const session = await stripe.checkout.sessions.create(
+  {
+    line_items: [
+      {
+        price: priceId,
+        quantity: 1,
+      },
+    ],
+    mode: 'payment',
+    success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/`,
+    cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/`,
+    metadata: {
+      attendeeId: attendeeId,
+      webinarId: webinarId,
+    },
+  },
+  {
+    stripeAccount: stripeId,
+  }
+)
+
+
+  } catch (error) {
+
+  }
+}
+

@@ -1,4 +1,4 @@
-import { Attendee } from "@prisma/client";
+import { Attendee, User, Webinar } from "@prisma/client";
 
 export type ValidationErrors = Record<string, string>
 
@@ -91,5 +91,10 @@ export type AttendanceData = {
     count: number
     users: Attendee[]
 
+}
+
+
+export type WebinarWithPresenter = Webinar & {
+  presenter: User
 }
 

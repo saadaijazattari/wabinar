@@ -5,11 +5,13 @@ import WebinarUpcomingState from './UpcomingWebinar/WebinarUpcomingState'
 import { usePathname, useRouter } from 'next/navigation'
 import { useAttendeeStore } from '@/store/useAttendeeStore'
 import { toast } from 'sonner'
+import LiveStreamState from './LiveWebinar/LiveStreamState'
+import { WebinarWithPresenter } from '@/lib/type'
 
 type Props = {
   error: string | undefined
   user: User | null
-  webinar: Webinar
+  webinar: WebinarWithPresenter
   apiKey: string
   token: string
   callId: string
@@ -25,17 +27,17 @@ const RenderWebinar = ({
 }: Props) => {
 
   const router = useRouter()
-const pathname = usePathname()
+  const pathname = usePathname()
 
-const { attendee } = useAttendeeStore()
+  const { attendee } = useAttendeeStore()
 
-useEffect(() => {
-  if (error) {
-    toast.error(error)
-    router.push(pathname)
-  }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [error])
+  useEffect(() => {
+    if (error) {
+      toast.error(error)
+      router.push(pathname)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [error])
 
 
   return (
@@ -47,40 +49,57 @@ useEffect(() => {
           currentUser={user || null}
         />
       ) : webinar.webinarStatus === WebinarStatusEnum.WAITING_ROOM ? (
-  <WebinarUpcomingState
+        <WebinarUpcomingState
+          webinar={webinar}
+          currentUser={user || null}
+        />
+
+      ) : webinar.webinarStatus === WebinarStatusEnum.LIVE ? (
+        //  Add live stream component and webinar stuff
+        <React.Fragment>
+          {user?.id === webinar.presenterId ? (
+            <LiveStreamState
+  apiKey={apiKey}
+  token={token}
+  callId={callId}
   webinar={webinar}
-  currentUser={user || null}
+  user={user}
 />
 
-) : webinar.webinarStatus === WebinarStatusEnum.LIVE ? (
-  //  Add live stream component and webinar stuff
-  <React.Fragment>
-  {user?.id === webinar.presenterId ? (
-    // <LiveStreamState
-    //   apiKey={apiKey}
-    //   token={token}
-    //   callId={callId}
-    // />
-    'live stream for presenter'
-  ) : // Only show the participant view if they've registered
-  attendee ? (
-    // <Participant
-    //   apiKey={apiKey}
-    //   token={token}
-    //   callId={callId}
-    // />
-    'live stream for participant'
-  ) : (
-    <WebinarUpcomingState
-      webinar={webinar}
-      currentUser={user || null}
-    />
-  )}
-</React.Fragment>
+          ) : // Only show the participant view if they've registered
+            attendee ? (
+              // <Participant
+              //   apiKey={apiKey}
+              //   token={token}
+              //   callId={callId}
+              // />
+              'live stream for participant'
+            ) : (
+              <WebinarUpcomingState
+                webinar={webinar}
+                currentUser={user || null}
+              />
+            )}
+        </React.Fragment>
 
-) : (
-  ''
-)}
+      ) : webinar.webinarStatus === WebinarStatusEnum.CANCELLED ? (
+        <div className="flex justify-center items-center h-full w-full">
+          <div className="text-center space-y-4">
+            <h3 className="text-2xl font-semibold text-primary">
+              {webinar?.title}
+            </h3>
+            <p className="text-muted-foreground text-xs">
+              This webinar has been cancelled.
+            </p>
+          </div>
+        </div>
+      ) : (
+        <WebinarUpcomingState
+          webinar={webinar}
+          currentUser={user || null}
+        />
+      )}
+
 
 
     </React.Fragment>
