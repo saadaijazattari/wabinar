@@ -5,6 +5,7 @@ import { onAuthenticateUser } from './auth'
 import Stripe from 'stripe'
 import { prismaClient } from '@/lib/prismaClient'
 import { X } from 'lucide-react'
+import { changeAttendanceType } from './attendence'
 
 export const getAllProductsFromStripe = async () => {
   try {
@@ -152,8 +153,23 @@ export const createCheckoutLink = async (
   }
 )
 
+if (bookCall) {
+  await changeAttendanceType(attendeeId, webinarId, 'ADDED_TO_CART')
+}
+
+return {
+  sessionUrl: session.url,
+  status: 200,
+  success: true,
+}
 
   } catch (error) {
+console.log('Error creating checkout link', error)
+return {
+  error: 'Error creating checkout link',
+  status: 500,
+  success: false,
+}
 
   }
 }

@@ -120,7 +120,6 @@ const CTAStep = ({ stripeProducts }: Props) => {
       </div>
 
       {/* Product Attachment Section */}
-      // Is pure block ko 'Product Attachment Section' ke dropdown ki jagah replace karein
 <div className="space-y-2">
   <Label htmlFor="product-select">Attach a Product</Label>
   

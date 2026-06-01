@@ -10,7 +10,7 @@ type Props = {}
 const page = async (props: Props) => {
     const userExist = await onAuthenticateUser()
 if (!userExist.user) {
-  redirect('/sign-in')
+  redirect('/')
 }
 
 const isConnected = !!userExist?.user?.stripeConnectId

@@ -12,7 +12,6 @@ type Props = {
   }>
 }
 
-// 1. Component ka naam 'Page' (Capital P) kar diya hai
 const Page = async ({ params, searchParams }: Props) => {
   const { liveWebinarId } = await params
   const { error } = await searchParams
@@ -28,18 +27,22 @@ const Page = async ({ params, searchParams }: Props) => {
   
   const checkUser = await onAuthenticateUser()
   
-  // Todo: Create API keys
   const apiKey = process.env.NEXT_PUBLIC_STREAM_API_KEY as string
   const token = process.env.NEXT_PUBLIC_STREAM_USER_TOKEN as string
   const callId = process.env.STREAM_CALL_ID as string
 
-
+  // 🚀 FIXED: Agar database se user mila hai, toh uski ID ko .env wali ID ("saad50") se override karein
+  // taake aapka static user token client-side par match ho jaye aur crash na ho.
+  const streamUser = checkUser.user ? {
+    ...checkUser.user,
+    id: "saad50" // 👈 Yeh aapke `.env` wale token ke andar ki exact ID hai
+  } : null
 
   return (
     <div className="w-full min-h-screen mx-auto">
       <RenderWebinar
         error={error}
-        user={checkUser.user || null}
+        user={streamUser} // 👈 Ab database user ki random ID nahi balki "saad50" jayegi
         webinar={webinarData}
         apiKey={apiKey}
         token={token}

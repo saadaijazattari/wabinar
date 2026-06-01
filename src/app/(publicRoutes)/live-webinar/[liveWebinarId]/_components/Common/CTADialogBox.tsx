@@ -1,3 +1,4 @@
+import { createCheckoutLink } from '@/actions/stripe'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { WebinarWithPresenter } from '@/lib/type'
@@ -30,6 +31,7 @@ const CTADialogBox = ({
   try {
     if (webinar?.ctaType === 'BOOK_A_CALL') {
       router.push(`/live-webinar/${webinar.id}/call?attendeeId=${userId}`)
+      return 
     } else {
       if (!webinar.priceId || !webinar.presenter.stripeConnectId) {
         return toast.error('No priceId or stripeConnectId found')
@@ -43,7 +45,18 @@ const CTADialogBox = ({
       webinar.id,
       true
     )
-  } catch (error) {}
+    if (!session.sessionUrl) {
+  throw new Error('Session ID not found in response')
+}
+window.open(session.sessionUrl, '_blank')
+  } catch (error) {
+    console.error('Error creating checkout link', error)
+toast.error('Error creating checkout link')
+
+  } finally{
+
+    setLoading(false)
+  }
 }
 
   return (
