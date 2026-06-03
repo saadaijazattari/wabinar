@@ -1,6 +1,6 @@
 'use client'
 import { WebinarWithPresenter } from '@/lib/type'
-import { MessageSquare, Users } from 'lucide-react'
+import { MessageSquare, Users, Video } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 import {StreamChat} from  'stream-chat'
 import { ParticipantView, useCallStateHooks } from "@stream-io/video-react-sdk";
@@ -124,7 +124,8 @@ return (
   </div>
 
   <button>Live chat</button>
-
+  
+<button><Video /></button>
     <button
     onClick={() => setShowChat(!showChat)}
     className={`px-3 py-1 rounded-full text-sm flex items-center space-x-1 ${
