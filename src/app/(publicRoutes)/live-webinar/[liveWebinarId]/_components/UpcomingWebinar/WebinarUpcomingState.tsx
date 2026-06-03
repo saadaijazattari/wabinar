@@ -12,9 +12,9 @@ import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 
 
-type Props = { webinar: Webinar; currentUser: User | null }
+type Props = { webinar: Webinar; currentUser: User | null; isHost: boolean }
 
-const WebinarUpcomingState = ({ webinar, currentUser }: Props) => {
+const WebinarUpcomingState = ({ webinar, isHost }: Props) => {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
@@ -62,14 +62,7 @@ const WebinarUpcomingState = ({ webinar, currentUser }: Props) => {
       priority
     />
   </div>
-  {webinar?.webinarStatus === WebinarStatusEnum.SCHEDULED ? (
-    <WaitListComponent
-      webinarId={webinar.id}
-      webinarStatus="SCHEDULED"
-    />
-  ) : webinar?.webinarStatus === WebinarStatusEnum.WAITING_ROOM ? (
-  <>
-  {currentUser?.id === webinar?.presenterId ? (
+  {isHost && (webinar?.webinarStatus === WebinarStatusEnum.SCHEDULED || webinar?.webinarStatus === WebinarStatusEnum.WAITING_ROOM) ? (
     <Button
       className="w-full max-w-[300px] font-semibold"
       onClick={handleStartWebinar}
@@ -84,14 +77,16 @@ const WebinarUpcomingState = ({ webinar, currentUser }: Props) => {
         'Start Webinar'
       )}
     </Button>
-  ) : (
+  ) : webinar?.webinarStatus === WebinarStatusEnum.SCHEDULED ? (
+    <WaitListComponent
+      webinarId={webinar.id}
+      webinarStatus="SCHEDULED"
+    />
+  ) : webinar?.webinarStatus === WebinarStatusEnum.WAITING_ROOM ? (
     <WaitListComponent
   webinarId={webinar.id}
   webinarStatus="WAITING_ROOM"
 />
-
-  )}
-</>
 
 ) : webinar?.webinarStatus === WebinarStatusEnum.LIVE ? (
   <WaitListComponent

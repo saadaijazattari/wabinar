@@ -109,11 +109,7 @@ toast.error(
     >
       <DialogTrigger asChild>
   <Button
-    className={`${
-      webinarStatus === WebinarStatusEnum.LIVE
-        ? 'bg-red-600 hover:bg-red-700'
-        : 'bg-primary hover:bg-primary/90'
-    } rounded-md px-4 py-2 text-primary-foreground text-sm font-semibold`}
+    className="bg-primary hover:bg-primary/90 rounded-md px-4 py-2 text-primary-foreground text-sm font-semibold"
   >
     {webinarStatus === WebinarStatusEnum.LIVE && (
       <span className="mr-2 h-2 w-2 bg-white rounded-full animate-pulse"></span>

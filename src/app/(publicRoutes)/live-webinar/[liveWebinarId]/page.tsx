@@ -38,11 +38,14 @@ const Page = async ({ params, searchParams }: Props) => {
     id: "saad50" // 👈 Yeh aapke `.env` wale token ke andar ki exact ID hai
   } : null
 
+  const isHost = checkUser.user?.id === webinarData.presenterId
+
   return (
     <div className="w-full min-h-screen mx-auto">
       <RenderWebinar
         error={error}
-        user={streamUser} // 👈 Ab database user ki random ID nahi balki "saad50" jayegi
+        user={streamUser}
+        isHost={isHost} // 👈 Pass host status
         webinar={webinarData}
         apiKey={apiKey}
         token={token}

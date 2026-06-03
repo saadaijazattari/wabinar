@@ -1,5 +1,5 @@
 'use client'
-import { User, Webinar, WebinarStatusEnum } from '@prisma/client'
+import { User, WebinarStatusEnum } from '@prisma/client'
 import React, { useEffect } from 'react'
 import WebinarUpcomingState from './UpcomingWebinar/WebinarUpcomingState'
 import { usePathname, useRouter } from 'next/navigation'
@@ -12,6 +12,7 @@ import Participant from './Participant/Participant'
 type Props = {
   error: string | undefined
   user: User | null
+  isHost: boolean
   webinar: WebinarWithPresenter
   apiKey: string
   token: string
@@ -21,6 +22,7 @@ type Props = {
 const RenderWebinar = ({
   error,
   user,
+  isHost,
   webinar,
   apiKey,
   token,
@@ -48,17 +50,19 @@ const RenderWebinar = ({
         <WebinarUpcomingState
           webinar={webinar}
           currentUser={user || null}
+          isHost={isHost}
         />
       ) : webinar.webinarStatus === WebinarStatusEnum.WAITING_ROOM ? (
         <WebinarUpcomingState
           webinar={webinar}
           currentUser={user || null}
+          isHost={isHost}
         />
 
       ) : webinar.webinarStatus === WebinarStatusEnum.LIVE ? (
         //  Add live stream component and webinar stuff
         <React.Fragment>
-          {user?.id === webinar.presenterId ? (
+          {isHost ? (
             <LiveStreamState
   apiKey={apiKey}
   token={token}
@@ -80,6 +84,7 @@ const RenderWebinar = ({
               <WebinarUpcomingState
                 webinar={webinar}
                 currentUser={user || null}
+                isHost={isHost}
               />
             )}
         </React.Fragment>
@@ -99,6 +104,7 @@ const RenderWebinar = ({
         <WebinarUpcomingState
           webinar={webinar}
           currentUser={user || null}
+          isHost={isHost}
         />
       )}
 
