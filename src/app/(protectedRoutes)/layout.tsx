@@ -13,7 +13,7 @@ const Layout = async ({children} : Props) => {
 
     const userExists = await onAuthenticateUser()
     if(!userExists.user){
-        redirect('/sig-in')
+        redirect('/sign-in')
     }
 
 const stripeProducts= await getAllProductsFromStripe()

@@ -12,8 +12,8 @@ export async function onAuthenticateUser(){
             }
         }
 
-        // if user exists
-        const userExists= await prismaClient.user.findUnique({
+        // Check if user exists by clerkId
+        let userExists = await prismaClient.user.findUnique({
             where: {
                 clerkId: user.id
             },
@@ -26,14 +26,35 @@ export async function onAuthenticateUser(){
             }
         }
 
-        const newUser = await prismaClient.user.create({
-  data: {
-    clerkId: user.id,
-    email: user.emailAddresses[0].emailAddress,
-    name: user.firstName + ' ' + user.lastName,
-    profileImage: user.imageUrl,
-  },
-})
+        // Check if user exists by email (in case of incomplete previous signup)
+        const userByEmail = await prismaClient.user.findUnique({
+            where: {
+                email: user.emailAddresses[0].emailAddress
+            },
+        })
+
+        let newUser
+        if(userByEmail){
+            // Update existing user with clerkId
+            newUser = await prismaClient.user.update({
+                where: { email: user.emailAddresses[0].emailAddress },
+                data: {
+                    clerkId: user.id,
+                    name: user.firstName + ' ' + user.lastName,
+                    profileImage: user.imageUrl,
+                },
+            })
+        } else {
+            // Create new user
+            newUser = await prismaClient.user.create({
+                data: {
+                    clerkId: user.id,
+                    email: user.emailAddresses[0].emailAddress,
+                    name: user.firstName + ' ' + user.lastName,
+                    profileImage: user.imageUrl,
+                },
+            })
+        }
 if (!newUser) {
   return {
     status: 500,
