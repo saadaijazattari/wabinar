@@ -3,12 +3,18 @@ import { WebinarWithPresenter } from '@/lib/type'
 import { MessageSquare, Users, Video } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 import {StreamChat} from  'stream-chat'
-import { ParticipantView, useCallStateHooks } from "@stream-io/video-react-sdk";
+import {
+  ParticipantView,
+  useCall,
+  useCallStateHooks,
+} from '@stream-io/video-react-sdk'
 import { Button } from '@/components/ui/button'
 import { CtaTypeEnum } from '@prisma/client'
 import 'stream-chat-react/dist/css/v2/index.css'
 import { Chat, Channel, MessageList, MessageInput } from 'stream-chat-react'
 import CTADialogBox from './CTADialogBox'
+import { Copy, Eye, EyeOff } from 'lucide-react'
+import { toast } from 'sonner'
 
 
 
@@ -33,11 +39,16 @@ const LiveWebinarView = ({
 }: Props) => {
 
     const {useParticipantCount, useParticipants} = useCallStateHooks()
+    const call = useCall()
+    const [showRTMP, setShowRTMP] = useState(false)
+    const [showKey, setShowKey] = useState(false)
     const participants = useParticipants()
     const [chatClient, setChatClient] = useState<StreamChat | null>(null)
 const [channel, setChannel] = useState<any>(null)
 const [dialogOpen, setDialogOpen] = useState(true)
-const hostParticipant = participants.length > 0 ? participants[0] : null
+
+// Find the host participant: prioritize those with video, or fall back to the first participant
+const hostParticipant = participants.find(p => p.videoStream) || (participants.length > 0 ? participants[0] : null)
 
 
 const viewerCount = useParticipantCount();
@@ -48,6 +59,16 @@ const handleCTAButtonClick = async () => {
   await channel.sendEvent({
     type: 'open_cta_dialog',
   })
+}
+
+const copyToClipboard = (text: string, label: string) => {
+  if (!text || text === 'Loading...') {
+    toast.error(`Please wait, ${label} is still loading`)
+    return
+  }
+  navigator.clipboard.writeText(text)
+    .then(() => toast.success(`${label} copied to clipboard`))
+    .catch(() => toast.error(`Failed to copy ${label}. Please select and copy manually.`))
 }
 
 
@@ -123,9 +144,19 @@ return (
     <span className="text-sm">{viewerCount}</span>
   </div>
 
-  <button>Live chat</button>
-  
-<button><Video /></button>
+  {isHost && (
+    <button
+      onClick={() => setShowRTMP(!showRTMP)}
+      className={`px-3 py-1 rounded-full text-sm flex items-center space-x-1 ${
+        showRTMP ? 'bg-primary text-primary-foreground' : 'bg-muted/50'
+      }`}
+      title="OBS Settings"
+    >
+      <Video size={16} />
+      <span>OBS</span>
+    </button>
+  )}
+
     <button
     onClick={() => setShowChat(!showChat)}
     className={`px-3 py-1 rounded-full text-sm flex items-center space-x-1 ${
@@ -144,7 +175,70 @@ return (
   </div>
 
 
-    <div className="flex flex-1 p-2 gap-2 overflow-hidden">
+    <div className="flex flex-1 p-2 gap-2 overflow-hidden relative">
+      {isHost && showRTMP && (
+        <div className="absolute top-4 left-4 z-50 w-80 bg-background border border-border rounded-lg shadow-xl p-4 space-y-4 animate-in fade-in slide-in-from-top-4">
+          <div className="flex items-center justify-between">
+            <h4 className="font-semibold flex items-center gap-2">
+              <Video size={18} className="text-primary" />
+              OBS Settings
+            </h4>
+            <button 
+              onClick={() => setShowRTMP(false)}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <EyeOff size={16} />
+            </button>
+          </div>
+          
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Stream URL</label>
+              <div className="flex gap-2">
+                <input 
+                  readOnly 
+                  value={call?.state.ingress?.rtmp.address || 'Loading...'} 
+                  className="flex-1 bg-muted text-xs p-2 rounded border border-border"
+                />
+                <button 
+                  onClick={() => copyToClipboard(call?.state.ingress?.rtmp.address || '', 'Stream URL')}
+                  className="p-2 hover:bg-accent rounded transition-colors"
+                >
+                  <Copy size={14} />
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Stream Key</label>
+              <div className="flex gap-2">
+                <input 
+                  type={showKey ? 'text' : 'password'}
+                  readOnly 
+                  value={call?.state.ingress?.rtmp.streamKey || 'Loading...'} 
+                  className="flex-1 bg-muted text-xs p-2 rounded border border-border"
+                />
+                <button 
+                  onClick={() => setShowKey(!showKey)}
+                  className="p-2 hover:bg-accent rounded transition-colors"
+                  title={showKey ? 'Hide' : 'Show'}
+                >
+                  {showKey ? <EyeOff size={14} /> : <Eye size={14} />}
+                </button>
+                <button 
+                  onClick={() => copyToClipboard(call?.state.ingress?.rtmp.streamKey || '', 'Stream Key')}
+                  className="p-2 hover:bg-accent rounded transition-colors"
+                >
+                  <Copy size={14} />
+                </button>
+              </div>
+            </div>
+          </div>
+          <p className="text-[10px] text-muted-foreground italic">
+            Copy these into OBS Studio Settings > Stream.
+          </p>
+        </div>
+      )}
   <div className="flex-1 rounded-lg overflow-hidden border border-border flex flex-col bg-card">
     <div className="flex-1 relative overflow-hidden">
       {hostParticipant ? (

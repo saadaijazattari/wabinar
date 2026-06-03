@@ -12,7 +12,7 @@ export const getStreamIoToken = async (attendee: Attendee | null) => {
       id: userId,
       name: attendee?.name || 'Guest',
       // 🚀 FIXED: Dicebear avatar ke syntax error ko sahi template literal ($ aur api URL) mein badla
-      image: `https://dicebear.com{encodeURIComponent(attendee?.name || 'Guest')}`,
+      image: `https://dicebear.com/api/initials/${encodeURIComponent(attendee?.name || 'Guest')}.svg`,
     }
 
     // 🚀 FIXED: getStreamClient ab ek function hai, isliye isko () ke sath call kiya

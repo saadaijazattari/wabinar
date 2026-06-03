@@ -27,7 +27,17 @@ const CustomLivestreamPlayer = ({
   if (!client) return
   const myCall = client.call(callType, callId)
   setCall(myCall)
-  myCall.join().catch((e) => {
+  
+  // Join the call without capturing local camera/mic (using OBS instead)
+  myCall.join({
+    create: true,
+    data: {
+      settings: {
+        audio: false,
+        video: false,
+      }
+    }
+  }).catch((e) => {
     console.error('Failed to join call', e)
   })
 
