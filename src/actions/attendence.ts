@@ -2,7 +2,7 @@
 
 import { prismaClient } from "@/lib/prismaClient"
 import { AttendanceData } from "@/lib/type"
-import { AttendedTypeEnum, CtaTypeEnum } from "@prisma/client"
+import { AttendedTypeEnum, CtaTypeEnum, WebinarStatusEnum } from "@prisma/client"
 import { revalidatePath } from "next/cache"
 
 export const getWebinarAttendance = async (
@@ -124,6 +124,9 @@ if (options.includeUsers) {
   attendedAt: attendance.joinedAt,
   stripeConnectId: null,
   callStatus: attendance.user.callStatus,
+  createdAt: attendance.user.createdAt,
+updatedAt: attendance.user.updatedAt,
+
 }))
 
 }
@@ -139,6 +142,7 @@ return {
   data: result,
   ctaType: webinar.ctaType,
   webinarTags: webinar.tags || [],
+  presenter: webinar.presenter,
 }
 
 
@@ -150,6 +154,46 @@ return {
         error : 'failed to fetch attendence data'
     }
   } 
+}
+
+export const getWebinarByPresenterId = async (
+  presenterId: string,
+  webinarStatus?: string
+) => {
+  try {
+
+    let statusFilter: WebinarStatusEnum | undefined
+
+switch (webinarStatus) {
+  case 'upcoming':
+    statusFilter = WebinarStatusEnum.SCHEDULED
+    break
+  case 'ended':
+    statusFilter = WebinarStatusEnum.ENDED
+    break
+  default:
+    statusFilter = undefined
+}
+
+
+
+    const webinars = await prismaClient.webinar.findMany({
+      where: { presenterId, webinarStatus: statusFilter },
+      include: {
+        presenter: {
+          select: {
+            name: true,
+            stripeConnectId: true,
+            id: true,
+          },
+        },
+      },
+    })
+    return webinars
+  } catch (error) {
+    console.error('Error getting webinars:', error)
+    return []
+  }
 }
 
 

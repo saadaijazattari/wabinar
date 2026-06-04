@@ -1,6 +1,6 @@
 'use client'
 import { WebinarWithPresenter } from '@/lib/type'
-import { MessageSquare, Users, Video } from 'lucide-react'
+import { Loader2, MessageSquare, Users, Video } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 import {StreamChat} from  'stream-chat'
 import {
@@ -15,6 +15,8 @@ import { Chat, Channel, MessageList, MessageInput } from 'stream-chat-react'
 import CTADialogBox from './CTADialogBox'
 import { Copy, Eye, EyeOff, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
+import { useRouter } from 'next/navigation'
+import { changeWebinarStatus } from '@/actions/wabinar'
 
 
 
@@ -37,22 +39,41 @@ const LiveWebinarView = ({
   userId,
   userToken,
 }: Props) => {
-
-    const {useParticipantCount, useParticipants} = useCallStateHooks()
-    const call = useCall()
-    const [showRTMP, setShowRTMP] = useState(false)
-    const [showKey, setShowKey] = useState(false)
-    const [isRefreshing, setIsRefreshing] = useState(false)
-    const participants = useParticipants()
-    const [chatClient, setChatClient] = useState<StreamChat | null>(null)
-const [channel, setChannel] = useState<any>(null)
-const [dialogOpen, setDialogOpen] = useState(true)
-
+  const router = useRouter()
+  const {useParticipantCount, useParticipants} = useCallStateHooks()
+  const call = useCall()
+  const [showRTMP, setShowRTMP] = useState(false)
+  const [showKey, setShowKey] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const participants = useParticipants()
+  const [chatClient, setChatClient] = useState<StreamChat | null>(null)
+  const [channel, setChannel] = useState<any>(null)
+  const [dialogOpen, setDialogOpen] = useState(true)
+  const [loading, setLoading] = useState(false) 
 // Find the host participant: prioritize those with video, or fall back to the first participant
 const hostParticipant = participants.find(p => p.videoStream) || (participants.length > 0 ? participants[0] : null)
 
 
 const viewerCount = useParticipantCount();
+
+const handleEndStream = async () => {
+  setLoading(true);
+  try {
+    const res = await changeWebinarStatus(webinar.id, "ENDED");
+    if (!res.success) {
+      throw new Error(res.message);
+    }
+    router.refresh();
+    toast.success("Webinar ended successfully");
+  } catch (error) {
+    console.error("Error ending stream", error);
+    toast.error("Error ending stream");
+  } finally {
+    setLoading(false);
+  }
+};
+
+
 
 const handleCTAButtonClick = async () => {
   if (!channel) return
@@ -151,7 +172,11 @@ useEffect(() => {
         setDialogOpen(true)
       }
 
-      // console.log("New message:", event);s
+    //   channel.on(handleEvent)
+    
+    // return () => {
+    //   channel.off(handleEvent) // ✅ Add cleanup
+    // }
     })
   }
 }, [chatClient, channel, isHost])
@@ -328,6 +353,17 @@ return (
   </div>
   {isHost && (
   <div className="flex items-center space-x-1">
+    <Button onClick={handleEndStream} disabled={loading}>
+  {loading ? (
+    <>
+      <Loader2 className="animate-spin mr-2" />
+      Loading...
+    </>
+  ) : (
+    "End Stream"
+  )}
+</Button>
+
     <Button onClick={handleCTAButtonClick}>
       {webinar.ctaType === CtaTypeEnum.BOOK_A_CALL
         ? 'Book a Call'
