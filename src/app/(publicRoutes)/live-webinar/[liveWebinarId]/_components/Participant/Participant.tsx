@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { WebinarWithPresenter } from '@/lib/type'
 import { useAttendeeStore } from '@/store/useAttendeeStore'
-import { StreamCall, StreamVideo, StreamVideoClient, type User } from '@stream-io/video-react-sdk'
+import { StreamCall, StreamVideo, StreamVideoClient, type User, type Call } from '@stream-io/video-react-sdk'
 import { getStreamIoToken } from '@/actions/streamio'
 import { Button } from '@/components/ui/button'
 import { AlertCircle, Loader2, WifiOff } from 'lucide-react'
@@ -30,29 +30,30 @@ const Participant = ({ apiKey, callId, webinar }: Props) => {
                 const user: User = {
                     id: attendee?.id || 'guest',
                     name: attendee?.name || 'Guest',
-                    image: `https://dicebear.com{
-  attendee?.name || 'Guest'
-}`,
-
+                    image: `https://dicebear.com/api/initials/${encodeURIComponent(attendee?.name || 'Guest')}.svg`,
                 }
 
                 const userToken = await getStreamIoToken(attendee)
                 setToken(userToken)
 
-                const streamClient = new StreamVideoClient({
+                const streamClient = StreamVideoClient.getOrCreateInstance({
                     apiKey,
                     user,
                     token: userToken,
                 })
-                streamClient.on('connection.changed', (event) => {
-                    if (event.online) {
-                        setConnectionStatus('connected')
-                    } else {
-                        setConnectionStatus('reconnecting')
-                    }
-                })
 
-                await streamClient.connectUser(user, userToken)
+                if (!streamClient.readOnly) {
+                    streamClient.on('connection.changed', (event) => {
+                        if (event.online) {
+                            setConnectionStatus('connected')
+                        } else {
+                            setConnectionStatus('reconnecting')
+                        }
+                    })
+
+                    await streamClient.connectUser(user, userToken)
+                }
+
                 const streamCall = streamClient.call('livestream', callId)
                 await streamCall.join({ create: true })
 
@@ -73,24 +74,24 @@ const Participant = ({ apiKey, callId, webinar }: Props) => {
         }
         initClient()
         return () => {
-  const currentCall = call
-  const currentClient = client
+            const currentCall = call
+            const currentClient = client
 
-  if (currentCall && currentClient) {
-    currentCall
-      .leave()
-      .then(() => {
-        console.log('Left the call')
-        currentClient.disconnectUser()
-        clientInitialized.current = false
-      })
-      .catch((error) => {
-        console.error('Error leaving call:', error)
-      })
-  }
-}
+            if (currentCall && currentClient) {
+                currentCall
+                    .leave()
+                    .then(() => {
+                        console.log('Left the call')
+                        currentClient.disconnectUser()
+                        clientInitialized.current = false
+                    })
+                    .catch((error) => {
+                        console.error('Error leaving call:', error)
+                    })
+            }
+        }
 
-    }, [apiKey, callId, attendee, call, client])
+    }, [apiKey, callId, attendee])
 
 
     if (!attendee) {

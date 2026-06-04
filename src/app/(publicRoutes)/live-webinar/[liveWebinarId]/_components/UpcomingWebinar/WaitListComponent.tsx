@@ -1,7 +1,7 @@
 'use client'
 import { registerAttendee } from '@/actions/attendence'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { useAttendeeStore } from '@/store/useAttendeeStore'
 import { WebinarStatusEnum } from '@prisma/client'
@@ -128,6 +128,9 @@ toast.error(
         ? 'Join the Webinar'
         : 'Join the Waitlist'}
     </DialogTitle>
+    <DialogDescription className="sr-only">
+      Please enter your name and email to continue.
+    </DialogDescription>
     <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full">
       {!submitted && (
   <React.Fragment>

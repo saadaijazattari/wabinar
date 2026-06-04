@@ -28,15 +28,14 @@ const CustomLivestreamPlayer = ({
   const myCall = client.call(callType, callId)
   setCall(myCall)
   
-  // Join the call without capturing local camera/mic (using OBS instead)
+  // Join the call with backstage enabled (required for some host features)
   myCall.join({
     create: true,
     data: {
-      settings: {
-        audio: false,
-        video: false,
-      }
-    }
+      backstage: true, // 👈 Enable backstage for the host
+    },
+    camera: false,      // 👈 Force disable camera
+    microphone: false,  // 👈 Force disable microphone
   }).catch((e) => {
     console.error('Failed to join call', e)
   })

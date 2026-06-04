@@ -13,7 +13,7 @@ import { CtaTypeEnum } from '@prisma/client'
 import 'stream-chat-react/dist/css/v2/index.css'
 import { Chat, Channel, MessageList, MessageInput } from 'stream-chat-react'
 import CTADialogBox from './CTADialogBox'
-import { Copy, Eye, EyeOff } from 'lucide-react'
+import { Copy, Eye, EyeOff, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
 
 
@@ -42,6 +42,7 @@ const LiveWebinarView = ({
     const call = useCall()
     const [showRTMP, setShowRTMP] = useState(false)
     const [showKey, setShowKey] = useState(false)
+    const [isRefreshing, setIsRefreshing] = useState(false)
     const participants = useParticipants()
     const [chatClient, setChatClient] = useState<StreamChat | null>(null)
 const [channel, setChannel] = useState<any>(null)
@@ -61,6 +62,32 @@ const handleCTAButtonClick = async () => {
   })
 }
 
+const handleRefreshCall = async () => {
+  if (!call) {
+    toast.error('Call not initialized')
+    return
+  }
+  setIsRefreshing(true)
+  try {
+    const response = await call.get()
+    console.log('--- DEBUG: Stream Call State ---')
+    console.log('Call ID:', call.id)
+    console.log('Ingress Data:', call.state.ingress)
+    console.log('Full State Response:', response)
+    
+    if (!call.state.ingress) {
+      toast.info('Ingress is still not available. Ensure RTMP is enabled in Stream Dashboard.')
+    } else {
+      toast.success('OBS details refreshed')
+    }
+  } catch (error) {
+    console.error('Error refreshing call', error)
+    toast.error('Failed to refresh OBS details')
+  } finally {
+    setIsRefreshing(false)
+  }
+}
+
 const copyToClipboard = (text: string, label: string) => {
   if (!text || text === 'Loading...') {
     toast.error(`Please wait, ${label} is still loading`)
@@ -70,6 +97,13 @@ const copyToClipboard = (text: string, label: string) => {
     .then(() => toast.success(`${label} copied to clipboard`))
     .catch(() => toast.error(`Failed to copy ${label}. Please select and copy manually.`))
 }
+
+// Auto-fetch call details if ingress is missing for host
+useEffect(() => {
+  if (call && isHost && !call.state.ingress) {
+    call.get().catch(err => console.error("Auto-fetch call info error:", err))
+  }
+}, [call, isHost])
 
 
 
@@ -183,26 +217,37 @@ return (
               <Video size={18} className="text-primary" />
               OBS Settings
             </h4>
-            <button 
-              onClick={() => setShowRTMP(false)}
-              className="text-muted-foreground hover:text-foreground"
-            >
-              <EyeOff size={16} />
-            </button>
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={handleRefreshCall}
+                disabled={isRefreshing}
+                className={`p-1 hover:bg-accent rounded transition-all ${isRefreshing ? 'animate-spin opacity-50' : ''}`}
+                title="Refresh Details"
+              >
+                <RefreshCw size={16} />
+              </button>
+              <button 
+                onClick={() => setShowRTMP(false)}
+                className="text-muted-foreground hover:text-foreground p-1"
+              >
+                <EyeOff size={16} />
+              </button>
+            </div>
           </div>
           
-          <div className="space-y-3">
+            <div className="space-y-3">
             <div className="space-y-1">
               <label className="text-xs font-medium text-muted-foreground">Stream URL</label>
               <div className="flex gap-2">
                 <input 
                   readOnly 
-                  value={call?.state.ingress?.rtmp.address || 'Loading...'} 
+                  value={call?.state.ingress?.rtmp.address || (call ? 'Ingress not ready' : 'Call not found')} 
                   className="flex-1 bg-muted text-xs p-2 rounded border border-border"
                 />
                 <button 
+                  disabled={!call?.state.ingress?.rtmp.address}
                   onClick={() => copyToClipboard(call?.state.ingress?.rtmp.address || '', 'Stream URL')}
-                  className="p-2 hover:bg-accent rounded transition-colors"
+                  className="p-2 hover:bg-accent rounded transition-colors disabled:opacity-30"
                 >
                   <Copy size={14} />
                 </button>
@@ -215,7 +260,7 @@ return (
                 <input 
                   type={showKey ? 'text' : 'password'}
                   readOnly 
-                  value={call?.state.ingress?.rtmp.streamKey || 'Loading...'} 
+                  value={call?.state.ingress?.rtmp.streamKey || (call ? 'Key not ready' : 'Call not found')} 
                   className="flex-1 bg-muted text-xs p-2 rounded border border-border"
                 />
                 <button 
@@ -226,16 +271,23 @@ return (
                   {showKey ? <EyeOff size={14} /> : <Eye size={14} />}
                 </button>
                 <button 
+                  disabled={!call?.state.ingress?.rtmp.streamKey}
                   onClick={() => copyToClipboard(call?.state.ingress?.rtmp.streamKey || '', 'Stream Key')}
-                  className="p-2 hover:bg-accent rounded transition-colors"
+                  className="p-2 hover:bg-accent rounded transition-colors disabled:opacity-30"
                 >
                   <Copy size={14} />
                 </button>
               </div>
             </div>
+            
+            {!call?.state.ingress && (
+              <div className="bg-destructive/10 p-2 rounded text-[10px] text-destructive border border-destructive/20">
+                Warning: RTMP Ingress is not enabled for this call. Please check your Stream Dashboard or ensure you have Host permissions.
+              </div>
+            )}
           </div>
           <p className="text-[10px] text-muted-foreground italic">
-            Copy these into OBS Studio Settings > Stream.
+            Copy these into OBS Studio Settings &gt; Stream.
           </p>
         </div>
       )}

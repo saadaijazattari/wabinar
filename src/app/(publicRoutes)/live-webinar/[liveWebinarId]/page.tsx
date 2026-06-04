@@ -31,6 +31,15 @@ const Page = async ({ params, searchParams }: Props) => {
   const token = process.env.NEXT_PUBLIC_STREAM_USER_TOKEN as string
   const callId = process.env.STREAM_CALL_ID as string
 
+  if (!apiKey || !token || !callId) {
+    return (
+      <div className="w-full min-h-screen flex flex-col justify-center items-center text-lg gap-4 p-4 text-center">
+        <h1 className="text-2xl font-bold text-destructive">Stream Configuration Missing</h1>
+        <p className="max-w-md">Please ensure <code>NEXT_PUBLIC_STREAM_API_KEY</code>, <code>NEXT_PUBLIC_STREAM_USER_TOKEN</code>, and <code>STREAM_CALL_ID</code> are set in your <code>.env</code> file.</p>
+      </div>
+    )
+  }
+
   // 🚀 FIXED: Agar database se user mila hai, toh uski ID ko .env wali ID ("saad50") se override karein
   // taake aapka static user token client-side par match ho jaye aur crash na ho.
   const streamUser = checkUser.user ? {

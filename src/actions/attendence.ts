@@ -19,6 +19,7 @@ export const getWebinarAttendance = async (
         id: true,
         ctaType: true,
         tags: true,
+        presenter: true,
         _count: {
           select: {
             attendances: true,
