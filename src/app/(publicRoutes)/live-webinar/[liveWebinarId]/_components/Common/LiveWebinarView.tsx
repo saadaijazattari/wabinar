@@ -52,42 +52,90 @@ const LiveWebinarView = ({
   const [loading, setLoading] = useState(false)
   const [obsDialogBox, setObsDialogOpen] = useState(false)
   
-  
-  // 🚀 FIXED: OBS stream ko prioritize karne ke liye, wo participant dhundein jo current user nahi hai lekin uska video stream on hai (OBS)
+  // 🚀 FIXED: Ingress data state
+  const [ingressData, setIngressData] = useState<{
+    rtmpAddress: string
+    streamKey: string
+  } | null>(null)
+
   const hostParticipant = participants.find(p => p.userId !== userId && p.videoStream) || 
                           participants.find(p => p.videoStream) || 
                           (participants.length > 0 ? participants[0] : null)
-  const viewerCount = useParticipantCount();
+  const viewerCount = useParticipantCount()
 
-  // Fixed: Access ingress from metadata
+  // 🚀 FIXED: Ingress ko correctly access karne ka tarika
+  // 🚀 FIXED: Stream key ke saare possible names check karo
+// 🚀 FINAL FIX: Stream key address ke andar hai
+const getIngressInfo = async () => {
+  if (!call) return null
+  
+  try {
+    const callData = await call.get()
+    const ingress = callData.call?.ingress
+    
+    console.log('📡 COMPLETE RTMP Object:', JSON.stringify(ingress?.rtmp, null, 2))
+    
+    if (ingress?.rtmp?.address) {
+      const fullAddress = ingress.rtmp.address
+      
+      // Address ko split karo
+      // Format: rtmps://domain:port/STREAM_KEY
+      const urlParts = fullAddress.split('/')
+      const streamKey = urlParts[urlParts.length - 1] // Last part is the key
+      
+      // Server URL (without stream key)
+      const serverUrl = fullAddress.substring(0, fullAddress.lastIndexOf('/'))
+      
+      const rtmpData = {
+        rtmpAddress: serverUrl,
+        streamKey: streamKey
+      }
+      
+      console.log('✅ Parsed Data:')
+      console.log('  Server URL:', serverUrl)
+      console.log('  Stream Key:', streamKey)
+      
+      return rtmpData
+    }
+    
+    console.warn('⚠️ No RTMP address found')
+    return null
+  } catch (error) {
+    console.error('❌ Error fetching ingress:', error)
+    return null
+  }
+}
+
   const getRtmpAddress = () => {
-    return call?.metadata?.ingress?.rtmp?.address || (call ? 'Ingress not ready' : 'Call not found')
+    if (!ingressData?.rtmpAddress) return 'Loading...'
+    return ingressData.rtmpAddress
   }
 
   const getStreamKey = () => {
-    return call?.metadata?.ingress?.rtmp?.streamKey || (call ? 'Key not ready' : 'Call not found')
+    if (!ingressData?.streamKey) return 'Loading...'
+    return ingressData.streamKey
   }
 
   const handleEndStream = async () => {
-    setLoading(true);
+    setLoading(true)
     try {
       await call?.stopLive({
         continue_recording: false,
       })
       await call?.endCall()
-      const res = await changeWebinarStatus(webinar.id, "ENDED");
+      const res = await changeWebinarStatus(webinar.id, "ENDED")
       if (!res.success) {
-        throw new Error(res.message);
+        throw new Error(res.message)
       }
-      toast.success("Webinar ended successfully");
-      router.push('/');
+      toast.success("Webinar ended successfully")
+      router.push('/')
     } catch (error) {
-      console.error("Error ending stream", error);
-      toast.error("Error ending stream");
+      console.error("Error ending stream", error)
+      toast.error("Error ending stream")
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const handleCTAButtonClick = async () => {
     if (!channel) return
@@ -104,8 +152,14 @@ const LiveWebinarView = ({
     }
     setIsRefreshing(true)
     try {
-      await call.get()
-      toast.success('OBS details refreshed')
+      const data = await getIngressInfo()
+      setIngressData(data)
+      
+      if (data?.rtmpAddress && data?.streamKey) {
+        toast.success('OBS details loaded successfully! 🎉')
+      } else {
+        toast.error('RTMP Ingress not found. Please enable it in Stream Dashboard.')
+      }
     } catch (error) {
       console.error('Error refreshing call:', error)
       toast.error('Failed to refresh OBS details')
@@ -115,18 +169,27 @@ const LiveWebinarView = ({
   }
 
   const copyToClipboard = (text: string, label: string) => {
-    if (!text || text === 'Loading...' || text === 'Ingress not ready' || text === 'Key not ready') {
-      toast.error(`Please wait, ${label} is still loading`)
+    if (!text || text === 'Loading...') {
+      toast.error(`${label} is still loading. Click "Refresh" button.`)
       return
     }
     navigator.clipboard.writeText(text)
-      .then(() => toast.success(`${label} copied to clipboard`))
-      .catch(() => toast.error(`Failed to copy ${label}. Please select and copy manually.`))
+      .then(() => toast.success(`✅ ${label} copied!`))
+      .catch(() => toast.error(`Failed to copy ${label}`))
   }
 
+  // 🚀 FIXED: Initial load
   useEffect(() => {
-    if (call && isHost && !call.metadata?.ingress) {
-      call.get().catch(err => console.error("Auto-fetch call info error:", err))
+    if (call && isHost) {
+      // Wait a bit for call to be fully initialized
+      setTimeout(() => {
+        getIngressInfo().then(data => {
+          setIngressData(data)
+          if (!data) {
+            toast.info('Click "Refresh" to load OBS credentials')
+          }
+        })
+      }, 1000)
     }
   }, [call, isHost])
 
@@ -161,16 +224,14 @@ const LiveWebinarView = ({
         chatClient.disconnectUser()
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, username, userToken, webinar.id, webinar.title])
 
   useEffect(() => {
     if (obsDialogBox && call && isHost) {
       handleRefreshCall()
     }
-  }, [obsDialogBox, call, isHost])
+  }, [obsDialogBox])
 
-  // Fixed: Added cleanup for event listener
   useEffect(() => {
     if (!chatClient || !channel) return
 
@@ -181,9 +242,8 @@ const LiveWebinarView = ({
     }
 
     channel.on(handleEvent)
-
     return () => {
-      channel.off(handleEvent) // Fixed memory leak
+      channel.off(handleEvent)
     }
   }, [chatClient, channel, isHost])
 
@@ -211,8 +271,8 @@ const LiveWebinarView = ({
           {isHost && (
             <button
               onClick={() => setShowRTMP(!showRTMP)}
-              className={`px-3 py-1 rounded-full text-sm flex items-center space-x-1 ${
-                showRTMP ? 'bg-primary text-primary-foreground' : 'bg-muted/50'
+              className={`px-3 py-1 rounded-full text-sm flex items-center space-x-1 transition-all ${
+                showRTMP ? 'bg-primary text-primary-foreground' : 'bg-muted/50 hover:bg-muted'
               }`}
               title="OBS Settings"
             >
@@ -223,8 +283,8 @@ const LiveWebinarView = ({
 
           <button
             onClick={() => setShowChat(!showChat)}
-            className={`px-3 py-1 rounded-full text-sm flex items-center space-x-1 ${
-              showChat ? "bg-accent-primary text-primary-foreground" : "bg-muted/50"
+            className={`px-3 py-1 rounded-full text-sm flex items-center space-x-1 transition-all ${
+              showChat ? "bg-accent-primary text-primary-foreground" : "bg-muted/50 hover:bg-muted"
             }`}
           >
             <MessageSquare size={16} />
@@ -235,78 +295,114 @@ const LiveWebinarView = ({
 
       <div className="flex flex-1 p-2 gap-2 overflow-hidden relative">
         {isHost && showRTMP && (
-          <div className="absolute top-4 left-4 z-50 w-80 bg-background border border-border rounded-lg shadow-xl p-4 space-y-4 animate-in fade-in slide-in-from-top-4">
+          <div className="absolute top-4 left-4 z-50 w-96 bg-background border-2 border-primary/20 rounded-lg shadow-2xl p-5 space-y-4 animate-in fade-in slide-in-from-top-4">
             <div className="flex items-center justify-between">
-              <h4 className="font-semibold flex items-center gap-2">
-                <Video size={18} className="text-primary" />
-                OBS Settings
+              <h4 className="font-bold text-lg flex items-center gap-2">
+                <Video size={20} className="text-primary" />
+                OBS Stream Settings
               </h4>
               <div className="flex items-center gap-2">
                 <button 
                   onClick={handleRefreshCall}
                   disabled={isRefreshing}
-                  className={`p-1 hover:bg-accent rounded transition-all ${isRefreshing ? 'animate-spin opacity-50' : ''}`}
-                  title="Refresh Details"
+                  className={`p-2 hover:bg-accent rounded-full transition-all ${
+                    isRefreshing ? 'animate-spin opacity-50' : 'hover:scale-110'
+                  }`}
+                  title="Refresh Credentials"
                 >
-                  <RefreshCw size={16} />
+                  <RefreshCw size={18} className="text-primary" />
                 </button>
                 <button 
                   onClick={() => setShowRTMP(false)}
-                  className="text-muted-foreground hover:text-foreground p-1"
+                  className="text-muted-foreground hover:text-foreground p-2 hover:bg-accent rounded-full transition-all"
                 >
-                  <EyeOff size={16} />
+                  <EyeOff size={18} />
                 </button>
               </div>
             </div>
             
-            <div className="space-y-3">
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-muted-foreground">Stream URL</label>
+            <div className="space-y-4">
+              {/* RTMP Server URL */}
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                  RTMP Server URL
+                </label>
                 <div className="flex gap-2">
                   <input 
                     readOnly 
                     value={getRtmpAddress()} 
-                    className="flex-1 bg-muted text-xs p-2 rounded border border-border"
+                    className="flex-1 bg-muted/50 text-sm p-3 rounded-lg border border-border focus:border-primary transition-colors font-mono"
+                    placeholder="rtmp://..."
                   />
                   <button 
-                    disabled={!call?.metadata?.ingress?.rtmp?.address}
-                    onClick={() => copyToClipboard(getRtmpAddress(), 'Stream URL')}
-                    className="p-2 hover:bg-accent rounded transition-colors disabled:opacity-30"
+                    onClick={() => copyToClipboard(getRtmpAddress(), 'Server URL')}
+                    className="p-3 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg transition-all hover:scale-105"
+                    title="Copy URL"
                   >
-                    <Copy size={14} />
+                    <Copy size={16} />
                   </button>
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-muted-foreground">Stream Key</label>
+              {/* Stream Key */}
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                  Stream Key
+                </label>
                 <div className="flex gap-2">
                   <input 
                     type={showKey ? 'text' : 'password'}
                     readOnly 
                     value={getStreamKey()} 
-                    className="flex-1 bg-muted text-xs p-2 rounded border border-border"
+                    className="flex-1 bg-muted/50 text-sm p-3 rounded-lg border border-border focus:border-primary transition-colors font-mono"
+                    placeholder="••••••••"
                   />
                   <button 
                     onClick={() => setShowKey(!showKey)}
-                    className="p-2 hover:bg-accent rounded transition-colors"
-                    title={showKey ? 'Hide' : 'Show'}
+                    className="p-3 bg-secondary hover:bg-secondary/80 rounded-lg transition-all"
+                    title={showKey ? 'Hide Key' : 'Show Key'}
                   >
-                    {showKey ? <EyeOff size={14} /> : <Eye size={14} />}
+                    {showKey ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                   <button 
-                    disabled={!call?.metadata?.ingress?.rtmp?.streamKey}
                     onClick={() => copyToClipboard(getStreamKey(), 'Stream Key')}
-                    className="p-2 hover:bg-accent rounded transition-colors disabled:opacity-30"
+                    className="p-3 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg transition-all hover:scale-105"
+                    title="Copy Key"
                   >
-                    <Copy size={14} />
+                    <Copy size={16} />
                   </button>
                 </div>
               </div>
+
+              {/* Status Indicator */}
+              <div className={`p-3 rounded-lg border ${
+                ingressData ? 'bg-green-500/10 border-green-500/30' : 'bg-yellow-500/10 border-yellow-500/30'
+              }`}>
+                <div className="flex items-center gap-2 text-sm">
+                  <div className={`w-2 h-2 rounded-full ${
+                    ingressData ? 'bg-green-500 animate-pulse' : 'bg-yellow-500'
+                  }`}></div>
+                  <span className={ingressData ? 'text-green-600' : 'text-yellow-600'}>
+                    {ingressData ? '✅ Credentials Ready' : '⏳ Click Refresh to Load'}
+                  </span>
+                </div>
+              </div>
             </div>
-            <p className="text-[10px] text-muted-foreground italic">
-              Copy these into OBS Studio Settings &gt; Stream.
-            </p>
+
+            {/* Instructions */}
+            <div className="bg-muted/30 p-4 rounded-lg border border-border">
+              <h5 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                📖 OBS Setup Guide
+              </h5>
+              <ol className="list-decimal list-inside space-y-1.5 text-xs text-muted-foreground">
+                <li>Open OBS Studio</li>
+                <li>Go to <strong>Settings → Stream</strong></li>
+                <li>Service: Select <strong>"Custom"</strong></li>
+                <li>Paste <strong>Server URL</strong> above</li>
+                <li>Paste <strong>Stream Key</strong> above</li>
+                <li>Click <strong>OK</strong> then <strong>Start Streaming</strong></li>
+              </ol>
+            </div>
           </div>
         )}
 
@@ -343,12 +439,12 @@ const LiveWebinarView = ({
             {isHost && (
               <div className="flex items-center space-x-1">
                 <Button
-  onClick={() => setObsDialogOpen(true)}
-  variant="outline"
-  className="mr-2"
->
-  Get OBS Creds
-</Button>
+                  onClick={() => setObsDialogOpen(true)}
+                  variant="outline"
+                  className="mr-2"
+                >
+                  Get OBS Creds
+                </Button>
 
                 <Button onClick={handleEndStream} disabled={loading}>
                   {loading ? (
