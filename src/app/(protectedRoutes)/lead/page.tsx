@@ -5,11 +5,14 @@ import { LeadIcon } from '@/icons/Leadicon'
 import { PipelineIcon } from '@/icons/Pipelineicon'
 import { Webcam } from 'lucide-react'
 import React from 'react'
-import { leadData } from './__tests__/data'
+import { getLeads } from '@/actions/leads'
 
 type Props = {}
 
-export default function Page(props: Props) {
+export default async function Page(props: Props) {
+  const leadsResponse = await getLeads()
+  const leads = leadsResponse.status === 200 ? leadsResponse.data : []
+
   return (
     <div className='w-full flex flex-col gap-8'>
         <PageHeader
@@ -37,7 +40,7 @@ export default function Page(props: Props) {
     </TableRow>
   </TableHeader>
   <TableBody>
-    {leadData?.map((lead, idx) => (
+    {leads?.map((lead, idx) => (
   <TableRow
     key={idx}
     className="border-0"

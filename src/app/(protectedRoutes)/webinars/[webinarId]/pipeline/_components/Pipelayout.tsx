@@ -6,7 +6,11 @@ import React from 'react'
 type Props = {
   title: string
   count: number
-  users: Attendee[]
+  users: {
+    id: string
+    name: string
+    email: string
+  }[]
   tags: string[]
 }
 

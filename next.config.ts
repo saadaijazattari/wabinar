@@ -5,6 +5,10 @@ const nextConfig: NextConfig = {
     // Isko 'bottom-right', 'top-left', ya 'top-right' par set kar ke position badlein
     position: 'top-right', 
   },
+  compiler: {
+  removeConsole: process.env.NODE_ENV === 'production',
+},
+
   /* config options here */
 };
 

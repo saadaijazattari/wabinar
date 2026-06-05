@@ -26,7 +26,7 @@ const page = async ({ params }: Props) => {
   )
 }
 
-  //TODO show real data
+  // Data is fetched dynamically from the database
   return (
     <div className="w-full flex flex-col gap-8">
       <PageHeader

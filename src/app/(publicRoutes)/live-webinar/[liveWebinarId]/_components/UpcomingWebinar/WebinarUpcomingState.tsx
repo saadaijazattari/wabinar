@@ -10,6 +10,8 @@ import { changeWebinarStatus } from '@/actions/wabinar';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
+import { createAndStartStream } from '@/actions/streamio';
+import { currentUser } from '@clerk/nextjs/server';
 
 
 type Props = { webinar: Webinar; currentUser: User | null; isHost: boolean }
@@ -21,6 +23,12 @@ const WebinarUpcomingState = ({ webinar, isHost }: Props) => {
   const handleStartWebinar = async () => {
   setLoading(true)
   try {
+    if (!currentUser?.id) {
+  throw new Error('User not authenticated')
+}
+
+await createAndStartStream(webinar)
+
     const res = await changeWebinarStatus(webinar.id, 'LIVE')
     if (!res.success) {
       throw new Error(res.message)

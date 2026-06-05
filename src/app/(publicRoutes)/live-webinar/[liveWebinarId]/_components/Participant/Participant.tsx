@@ -91,7 +91,7 @@ const Participant = ({ apiKey, callId, webinar }: Props) => {
             }
         }
 
-    }, [apiKey, callId, attendee])
+    }, [apiKey, callId, attendee, call, client, webinar.id])
 
 
     if (!attendee) {
@@ -201,6 +201,7 @@ return (
   <StreamVideo client={client}>
     <StreamCall call={call}>
       <LiveWebinarView
+      call={call}
         showChat={showChat}
         setShowChat={setShowChat}
         webinar={webinar}

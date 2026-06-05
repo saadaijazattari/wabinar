@@ -3,7 +3,10 @@ import { Attendee } from '@prisma/client'
 import React from 'react'
 
 type Props = {
-  customer: Attendee
+  customer: {
+    name: string
+    email: string
+  }
   tags: string[]
   className?: string
 }

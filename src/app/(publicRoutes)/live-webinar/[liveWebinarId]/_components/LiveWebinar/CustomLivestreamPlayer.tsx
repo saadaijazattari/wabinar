@@ -27,26 +27,18 @@ const CustomLivestreamPlayer = ({
   if (!client) return
   const myCall = client.call(callType, callId)
   setCall(myCall)
-  
-  // Join the call with backstage enabled (required for some host features)
-  myCall.join({
-    create: true,
-    data: {
-      backstage: true, // 👈 Enable backstage for the host
-    },
-    camera: false,      // 👈 Force disable camera
-    microphone: false,  // 👈 Force disable microphone
-  }).catch((e) => {
-    console.error('Failed to join call', e)
-  })
-
+  myCall.join({ create: true }).then(
+    () => setCall(myCall),
+    () => console.error('Failed to join the call')
+  )
   return () => {
-    myCall.leave().catch((e) => {
-      console.error('Failed to leave call', e)
-    })
+    // myCall.leave().catch((e) => {
+    //   console.error('Failed to leave call', e)
+    // })
     setCall(undefined)
   }
 }, [client, callId, callType])
+
 
   if (!call) return null
 
@@ -57,9 +49,10 @@ return (
   setShowChat={setShowChat}
   isHost={true}
   username={username}
-  userId={process.env.NEXT_PUBLIC_STREAM_USER_ID!}
+  userId={webinar.presenter.id}
   userToken={token}
   webinar={webinar}
+  call = {call}
 />
 
 </StreamCall>
