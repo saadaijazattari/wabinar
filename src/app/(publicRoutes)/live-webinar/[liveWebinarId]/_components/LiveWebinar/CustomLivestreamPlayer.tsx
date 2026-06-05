@@ -6,6 +6,7 @@ import LiveWebinarView from '../Common/LiveWebinarView'
 
 type Props = {
   username: string
+  userId: string
   callId: string
   callType: string
   webinar: WebinarWithPresenter
@@ -14,6 +15,7 @@ type Props = {
 
 const CustomLivestreamPlayer = ({
   username,
+  userId,
   callId,
   callType,
   webinar,
@@ -23,18 +25,25 @@ const CustomLivestreamPlayer = ({
   const [call, setCall] = useState<Call>()
   const [showChat, setShowChat] = useState(true)
 
-    useEffect(() => {
-  if (!client) return
+  useEffect(() => {
+  if (!client || !callId) return
   const myCall = client.call(callType, callId)
   setCall(myCall)
+  
   myCall.join({ create: true }).then(
-    () => setCall(myCall),
+    async () => {
+      setCall(myCall)
+      try {
+        await myCall.camera.disable();
+        await myCall.microphone.disable();
+        console.log('Host camera and microphone disabled for OBS streaming');
+      } catch (err) {
+        console.warn('Failed to disable host media:', err);
+      }
+    },
     () => console.error('Failed to join the call')
   )
   return () => {
-    // myCall.leave().catch((e) => {
-    //   console.error('Failed to leave call', e)
-    // })
     setCall(undefined)
   }
 }, [client, callId, callType])
@@ -49,7 +58,7 @@ return (
   setShowChat={setShowChat}
   isHost={true}
   username={username}
-  userId={webinar.presenter.id}
+  userId={userId}
   userToken={token}
   webinar={webinar}
   call = {call}

@@ -53,7 +53,10 @@ const LiveWebinarView = ({
   const [obsDialogBox, setObsDialogOpen] = useState(false)
   
   
-  const hostParticipant = participants.find(p => p.videoStream) || (participants.length > 0 ? participants[0] : null)
+  // 🚀 FIXED: OBS stream ko prioritize karne ke liye, wo participant dhundein jo current user nahi hai lekin uska video stream on hai (OBS)
+  const hostParticipant = participants.find(p => p.userId !== userId && p.videoStream) || 
+                          participants.find(p => p.videoStream) || 
+                          (participants.length > 0 ? participants[0] : null)
   const viewerCount = useParticipantCount();
 
   // Fixed: Access ingress from metadata
@@ -101,19 +104,10 @@ const LiveWebinarView = ({
     }
     setIsRefreshing(true)
     try {
-      const response = await call.get()
-      console.log('--- DEBUG: Stream Call State ---')
-      console.log('Call ID:', call.id)
-      console.log('Ingress Data:', call.metadata?.ingress)
-      console.log('Full State Response:', response)
-      
-      if (!call.metadata?.ingress) {
-        toast.info('Ingress is still not available. Ensure RTMP is enabled in Stream Dashboard.')
-      } else {
-        toast.success('OBS details refreshed')
-      }
+      await call.get()
+      toast.success('OBS details refreshed')
     } catch (error) {
-      console.error('Error refreshing call', error)
+      console.error('Error refreshing call:', error)
       toast.error('Failed to refresh OBS details')
     } finally {
       setIsRefreshing(false)
@@ -170,6 +164,12 @@ const LiveWebinarView = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, username, userToken, webinar.id, webinar.title])
 
+  useEffect(() => {
+    if (obsDialogBox && call && isHost) {
+      handleRefreshCall()
+    }
+  }, [obsDialogBox, call, isHost])
+
   // Fixed: Added cleanup for event listener
   useEffect(() => {
     if (!chatClient || !channel) return
@@ -186,41 +186,6 @@ const LiveWebinarView = ({
       channel.off(handleEvent) // Fixed memory leak
     }
   }, [chatClient, channel, isHost])
-
-  // Fixed: Added cleanup for call events
-  useEffect(() => {
-    if (!call) return
-
-    const handleStreamStarted = () => {
-      toast.success('Webinar started successfully')
-      router.refresh()
-    }
-
-    const handleStreamFailed = () => {
-      toast.error('Stream failed to start. Please try again.')
-    }
-
-    call.on('call.rtmp_broadcast_started', handleStreamStarted)
-    call.on('call.rtmp_broadcast_failed', handleStreamFailed)
-
-    return () => {
-      call.off('call.rtmp_broadcast_started', handleStreamStarted)
-      call.off('call.rtmp_broadcast_failed', handleStreamFailed)
-    }
-  }, [call, router])
-
-  useEffect(() => {
-  call.on('call.rtmp_broadcast_started', () => {
-    toast.success('Webinar started successfully')
-    router.refresh()
-  })
-
-  call.on('call.rtmp_broadcast_failed', () => {
-    // Handle stream failure
-    toast.error('Stream failed to start. Please try again.')
-  })
-}, [call])
-
 
   if (!chatClient || !channel) return null
 
@@ -338,12 +303,6 @@ const LiveWebinarView = ({
                   </button>
                 </div>
               </div>
-              
-              {!call?.metadata?.ingress && (
-                <div className="bg-destructive/10 p-2 rounded text-[10px] text-destructive border border-destructive/20">
-                  Warning: RTMP Ingress is not enabled for this call. Please check your Stream Dashboard or ensure you have Host permissions.
-                </div>
-              )}
             </div>
             <p className="text-[10px] text-muted-foreground italic">
               Copy these into OBS Studio Settings &gt; Stream.
@@ -438,13 +397,13 @@ const LiveWebinarView = ({
         />
       )}
       {obsDialogBox && (
-  <ObsDialogBox
-    open={obsDialogBox}
-    onOpenChange={setObsDialogOpen}
-    rtmpURL={`rtmps://://stream-io-video.com{process.env.NEXT_PUBLIC_STREAM_API_KEY}.livestream.${webinar.id}`}
-    streamKey={userToken}
-  />
-)}
+        <ObsDialogBox
+          open={obsDialogBox}
+          onOpenChange={setObsDialogOpen}
+          rtmpURL={getRtmpAddress()}
+          streamKey={getStreamKey()}
+        />
+      )}
 
     </div>
   )

@@ -45,13 +45,13 @@ const RenderWebinar = ({
   // ✅ LIVE status
   if (webinar.webinarStatus === WebinarStatusEnum.LIVE) {
     // Host view
-    if (user?.id === webinar.presenterId) {
+    if (isHost) {
       return (
         <LiveStreamState
           apiKey={apiKey}
           webinar={webinar}
           callId={callId}
-          user={user}
+          user={user!}
         />
       )
     }
@@ -72,6 +72,7 @@ const RenderWebinar = ({
       <WebinarUpcomingState
         webinar={webinar}
         currentUser={user || null}
+        isHost={isHost}
       />
     )
   }
@@ -123,6 +124,7 @@ const RenderWebinar = ({
     <WebinarUpcomingState
       webinar={webinar}
       currentUser={user || null}
+      isHost={isHost}
     />
   )
 }

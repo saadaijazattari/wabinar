@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Copy } from "lucide-react"
 import { toast } from "sonner"
@@ -27,9 +27,12 @@ const ObsDialogBox = ({ open, onOpenChange, rtmpURL, streamKey }: Props) => {
       open={open}
       onOpenChange={onOpenChange}
     >
-      <DialogContent>
+      <DialogContent aria-describedby="obs-dialog-description">
         <DialogHeader>
           <DialogTitle>OBS Streaming Credentials</DialogTitle>
+          <DialogDescription id="obs-dialog-description">
+            Copy these credentials into your OBS Studio settings to start streaming.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
         <div className="space-y-2">

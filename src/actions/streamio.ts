@@ -1,6 +1,5 @@
 'use server'
 
-import { prismaClient } from '@/lib/prismaClient'
 import { getStreamClient } from '@/lib/stream/getStreamClient'
 import { Attendee, Webinar } from '@prisma/client'
 import { UserRequest } from '@stream-io/video-react-sdk'
@@ -60,48 +59,31 @@ export const getTokenForHost = async (
   }
 }
 
-
-
-
 export const createAndStartStream = async (webinar: Webinar) => {
   try {
-    const checkWebinar = await prismaClient.webinar.findMany({
-      where: {
-        presenterId: webinar.presenterId,
-        webinarStatus: 'LIVE',
-      },
-    })
-
-    if (checkWebinar.length > 0) {
-      throw new Error('You already have a live stream running')
-    }
-
-    // 🚀 FIXED: getStreamClient ab ek function hai, isliye isko () ke sath call kiya
     const client = getStreamClient()
-    const call = client.video.call('livestream', webinar.id) // Note: Stream SDK mein call type aksar 'default' ya 'livestream' hota hai, aap apne setup ke hisab se 'video' ya 'default' rakh sakte hain.
+    const call = client.video.call('livestream', webinar.id)
 
     await call.getOrCreate({
-  data: {
-    // starts_at: new Date(webinar.startTime),
-    created_by_id: webinar.presenterId,
-    members: [
-      {
-        user_id: webinar.presenterId, // 🚀 FIXED: User ID dena zaroori hai
-        role: 'host',
+      data: {
+        created_by_id: webinar.presenterId,
+        members: [
+          { user_id: webinar.presenterId, role: 'host' },
+          { user_id: 'saad50', role: 'host' },
+        ],
+        settings_override: {
+          ingress: { rtmp: { enabled: true } },
+        },
       },
-    ],
-  },
-})
-
-
-call.goLive({
-
-})
+    })
+    
+    // Refresh to get metadata (ingress)
+    await call.get()
 
     console.log('stream created and started successfully');
-    
-  } catch (error) {
-    console.error('Error creating and starting stream:', error)
-    throw new Error('Failed to create and start stream')
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error in createAndStartStream:', error);
+    throw new Error('Failed to create and start stream');
   }
 }

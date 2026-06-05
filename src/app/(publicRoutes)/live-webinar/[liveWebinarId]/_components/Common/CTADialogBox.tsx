@@ -1,6 +1,6 @@
 import { createCheckoutLink } from '@/actions/stripe'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog'
 import { WebinarWithPresenter } from '@/lib/type'
 import { ChevronRight, Loader2, Play } from 'lucide-react'
 import { useRouter } from 'next/navigation'
@@ -65,17 +65,17 @@ toast.error('Error creating checkout link')
   onOpenChange={onOpenChange}
 >
   {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-  <DialogContent className="sm:max-w-md bg-card text-card-foreground border-border">
+  <DialogContent aria-describedby="cta-dialog-description" className="sm:max-w-md bg-card text-card-foreground border-border">
     <DialogHeader>
       <DialogTitle className='text-lg font-medium'>{webinar.title}
         {webinar?.ctaType === 'BOOK_A_CALL' ? 'Book a Call' : 'Buy Now'}
 
       </DialogTitle>
-      <p className="text-sm text-muted-foreground mt-1">
+      <DialogDescription id="cta-dialog-description" className="text-sm text-muted-foreground mt-1">
   {webinar?.ctaType === 'BOOK_A_CALL'
     ? 'You will be redirected to a call on another page '
     : 'You will be redirected to checkout'}
-</p>
+</DialogDescription>
 
       
     </DialogHeader>

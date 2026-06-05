@@ -65,6 +65,7 @@ if (webinarData?.webinarStatus === WebinarStatusEnum.ENDED) {
         isHost={isHost} // 👈 Pass host status
         webinar={webinarData as WebinarWithPresenter}
         apiKey={apiKey}
+        callId={liveWebinarId}
         recording={null}
       />
     </div>

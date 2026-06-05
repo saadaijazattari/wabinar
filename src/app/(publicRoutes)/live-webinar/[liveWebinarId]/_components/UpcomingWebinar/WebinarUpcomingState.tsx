@@ -11,12 +11,9 @@ import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import { createAndStartStream } from '@/actions/streamio';
-import { currentUser } from '@clerk/nextjs/server';
-
-
 type Props = { webinar: Webinar; currentUser: User | null; isHost: boolean }
 
-const WebinarUpcomingState = ({ webinar, isHost }: Props) => {
+const WebinarUpcomingState = ({ webinar, isHost, currentUser }: Props) => {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
