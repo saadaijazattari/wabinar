@@ -73,29 +73,35 @@ const getIngressInfo = async () => {
     const callData = await call.get()
     const ingress = callData.call?.ingress
     
-    console.log('📡 COMPLETE RTMP Object:', JSON.stringify(ingress?.rtmp, null, 2))
+    console.log('📡 Raw Ingress Data:', JSON.stringify(ingress, null, 2))
     
     if (ingress?.rtmp?.address) {
       const fullAddress = ingress.rtmp.address
+      console.log('🔍 Full Address:', fullAddress)
       
-      // Address ko split karo
-      // Format: rtmps://domain:port/STREAM_KEY
-      const urlParts = fullAddress.split('/')
-      const streamKey = urlParts[urlParts.length - 1] // Last part is the key
+      // Regex jo sirf slash (/) ke baad wali Stream Key ko nikalega
+      // Aur baaki ka poora shuruati hissa Server URL rahega
+      const match = fullAddress.match(/(rtmps?:\/\/[^\/]+)\/(.+)/)
       
-      // Server URL (without stream key)
-      const serverUrl = fullAddress.substring(0, fullAddress.lastIndexOf('/'))
-      
-      const rtmpData = {
-        rtmpAddress: serverUrl,
-        streamKey: streamKey
+      if (match) {
+        // Stream.io ke liye full address hi standard server path hota hai (with port if present)
+        const serverUrl = match[1]    // e.g., rtmps://://stream-io-video.com ya rtmps://://stream-io-video.com
+        const streamKey = match[2]    // e.g., zpn8qbpsufss.livestream.xxx
+        
+        const rtmpData = {
+          rtmpAddress: serverUrl,
+          streamKey: streamKey
+        }
+        
+        console.log('✅ OBS New Format:')
+        console.log('  Server:', serverUrl)
+        console.log('  Key:', streamKey)
+        
+        return rtmpData
+      } else {
+        console.error('❌ Failed to parse RTMP URL')
+        return null
       }
-      
-      console.log('✅ Parsed Data:')
-      console.log('  Server URL:', serverUrl)
-      console.log('  Stream Key:', streamKey)
-      
-      return rtmpData
     }
     
     console.warn('⚠️ No RTMP address found')
@@ -105,6 +111,8 @@ const getIngressInfo = async () => {
     return null
   }
 }
+
+
 
   const getRtmpAddress = () => {
     if (!ingressData?.rtmpAddress) return 'Loading...'
